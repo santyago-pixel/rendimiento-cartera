@@ -312,17 +312,6 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
             elif any(keyword in op['Tipo'].strip().lower() for keyword in ['dividendo', 'cupon', 'dividend', 'coupon', 'amortizacion', 'amortización']):
                 total_dividends_coupons_hasta_fin += op['Monto']
         
-        # PASO 4: Verificar si hay operaciones después de la fecha fin
-        # Si los nominales son cero al final del período Y no hay operaciones después, excluir el activo
-        has_operations_after_period = any(
-            op['Fecha'] > pd.to_datetime(fecha_fin) 
-            for _, op in asset_ops.iterrows()
-        )
-        
-        # Si los nominales finales son cero Y no hay operaciones futuras, no incluir en la evolución
-        if current_nominals_fin == 0 and not has_operations_after_period:
-            continue
-        
         # Obtener precios al inicio y fin
         asset_prices = precios[precios['Activo'] == asset]
         
