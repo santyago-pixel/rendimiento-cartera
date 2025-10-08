@@ -365,6 +365,130 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
     
     return pd.DataFrame(evolution_data)
 
+def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio, fecha_fin):
+    """Mostrar análisis detallado de un activo específico"""
+    
+    # Convertir fechas
+    operaciones['Fecha'] = pd.to_datetime(operaciones['Fecha'])
+    precios['Fecha'] = pd.to_datetime(precios['Fecha'])
+    
+    # Filtrar operaciones del activo
+    asset_ops = operaciones[operaciones['Activo'] == activo].sort_values('Fecha')
+    
+    # PASO 1: Encontrar el último reset ANTES o EN el inicio del período
+    running_nominals = 0
+    last_reset_date = None
+    
+    # Recorrer todas las operaciones hasta la fecha de inicio para encontrar el último reset
+    for _, op in asset_ops.iterrows():
+        if op['Fecha'] > pd.to_datetime(fecha_inicio):
+            break
+            
+        previous_nominals = running_nominals
+        
+        if op['Tipo'].strip() == 'Compra':
+            running_nominals += op['Cantidad']
+        elif op['Tipo'].strip() == 'Venta':
+            running_nominals -= op['Cantidad']
+        
+        # Si los nominales pasan de positivo a cero o negativo, es un reset
+        if previous_nominals > 0 and running_nominals <= 0:
+            last_reset_date = op['Fecha']
+            running_nominals = 0  # Reset a cero
+    
+    # PASO 2: Determinar operaciones a procesar
+    if last_reset_date is None:
+        # Si no hay reset, usar todas las operaciones desde el inicio hasta fecha fin
+        ops_since_reset = asset_ops[asset_ops['Fecha'] <= pd.to_datetime(fecha_fin)]
+    else:
+        # Si hay reset, usar operaciones desde la fecha posterior al reset hasta fecha fin
+        ops_since_reset = asset_ops[
+            (asset_ops['Fecha'] > last_reset_date) & 
+            (asset_ops['Fecha'] <= pd.to_datetime(fecha_fin))
+        ]
+    
+    # PASO 3: Calcular nominales al inicio del período
+    current_nominals_inicio = 0
+    for _, op in ops_since_reset.iterrows():
+        if op['Fecha'] > pd.to_datetime(fecha_inicio):
+            break
+        if op['Tipo'].strip() == 'Compra':
+            current_nominals_inicio += op['Cantidad']
+        elif op['Tipo'].strip() == 'Venta':
+            current_nominals_inicio -= op['Cantidad']
+    
+    # PASO 4: Crear tabla detallada
+    detalle_data = []
+    
+    # Agregar valor inicial si hay nominales al inicio del período
+    if current_nominals_inicio > 0:
+        # Obtener precio al inicio del período
+        asset_prices = precios[precios['Activo'] == activo]
+        available_prices_inicio = asset_prices[asset_prices['Fecha'] <= pd.to_datetime(fecha_inicio)]
+        precio_inicio = available_prices_inicio.iloc[-1]['Precio'] if not available_prices_inicio.empty else 0
+        
+        detalle_data.append({
+            'Fecha': fecha_inicio,
+            'Operación': 'Valor Inicial',
+            'Nominales': current_nominals_inicio,
+            'Precio': precio_inicio,
+            'Valor': current_nominals_inicio * precio_inicio
+        })
+    
+    # Agregar todas las operaciones en el período
+    ops_en_periodo = ops_since_reset[
+        (ops_since_reset['Fecha'] >= pd.to_datetime(fecha_inicio)) &
+        (ops_since_reset['Fecha'] <= pd.to_datetime(fecha_fin))
+    ]
+    
+    for _, op in ops_en_periodo.iterrows():
+        detalle_data.append({
+            'Fecha': op['Fecha'],
+            'Operación': op['Tipo'],
+            'Nominales': op['Cantidad'],
+            'Precio': op['Precio'],
+            'Valor': op['Monto']
+        })
+    
+    # Crear DataFrame y formatear
+    detalle_df = pd.DataFrame(detalle_data)
+    
+    if not detalle_df.empty:
+        # Formatear fechas
+        detalle_df['Fecha'] = pd.to_datetime(detalle_df['Fecha']).dt.strftime('%d/%m/%Y')
+        
+        # Formatear números con comas
+        detalle_display = detalle_df.copy()
+        detalle_display['Nominales'] = detalle_display['Nominales'].apply(lambda x: f"{x:,.0f}")
+        detalle_display['Precio'] = detalle_display['Precio'].apply(lambda x: f"${x:,.2f}")
+        detalle_display['Valor'] = detalle_display['Valor'].apply(lambda x: f"${x:,.2f}")
+        
+        # Mostrar tabla
+        st.markdown(f"**Operaciones detalladas para {activo}:**")
+        st.dataframe(
+            detalle_display,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Fecha": st.column_config.TextColumn("Fecha", width="small"),
+                "Operación": st.column_config.TextColumn("Operación", width="medium"),
+                "Nominales": st.column_config.TextColumn("Nominales", width="small"),
+                "Precio": st.column_config.TextColumn("Precio", width="small"),
+                "Valor": st.column_config.TextColumn("Valor", width="small")
+            }
+        )
+        
+        # Botón de descarga
+        csv_detalle = detalle_df.to_csv(index=False)
+        st.download_button(
+            label=f"📥 Descargar CSV - {activo}",
+            data=csv_detalle,
+            file_name=f"detalle_{activo}_{fecha_inicio.strftime('%Y%m%d')}_{fecha_fin.strftime('%Y%m%d')}.csv",
+            mime="text/csv"
+        )
+    else:
+        st.info(f"No hay operaciones para {activo} en el período seleccionado.")
+
 def main():
     # Sidebar
     with st.sidebar:
@@ -542,6 +666,23 @@ def main():
             )
         else:
             st.warning("No hay datos de evolución para el rango de fechas seleccionado.")
+        
+        # Análisis detallado por activo
+        if not evolution_df.empty:
+            st.markdown("---")
+            st.subheader("📋 Análisis Detallado por Activo")
+            
+            # Selector de activos
+            activos_disponibles = evolution_df['Activo'].tolist()
+            activo_seleccionado = st.selectbox(
+                "Seleccionar activo para análisis detallado:",
+                activos_disponibles,
+                help="Selecciona un activo para ver todas las operaciones consideradas en el período"
+            )
+            
+            if activo_seleccionado:
+                # Mostrar análisis detallado del activo seleccionado
+                mostrar_analisis_detallado_activo(operaciones, precios, activo_seleccionado, fecha_inicio, fecha_fin)
     else:
         st.error("Error al cargar los datos. Verifica que el archivo 'operaciones.xlsx' esté en la carpeta del proyecto.")
 
