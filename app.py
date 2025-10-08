@@ -455,13 +455,13 @@ def main():
                 hide_index=True,
                 column_config={
                     "Activo": st.column_config.TextColumn("Activo", width="medium"),
-                    "Nominales": st.column_config.NumberColumn("Nominales", format="%.0f"),
-                    "Precio Actual": st.column_config.NumberColumn("Precio Actual", format="$%.2f"),
-                    "Valor Actual": st.column_config.NumberColumn("Valor Actual", format="$%.2f"),
-                    "Invertido": st.column_config.NumberColumn("Invertido", format="$%.2f"),
-                    "Ventas": st.column_config.NumberColumn("Ventas", format="$%.2f"),
-                    "Div - Cupones": st.column_config.NumberColumn("Div - Cupones", format="$%.2f"),
-                    "Ganancia Total": st.column_config.NumberColumn("Ganancia Total", format="$%.2f")
+                    "Nominales": st.column_config.NumberColumn("Nominales", format="%,.0f"),
+                    "Precio Actual": st.column_config.NumberColumn("Precio Actual", format="$%,.2f"),
+                    "Valor Actual": st.column_config.NumberColumn("Valor Actual", format="$%,.2f"),
+                    "Invertido": st.column_config.NumberColumn("Invertido", format="$%,.2f"),
+                    "Ventas": st.column_config.NumberColumn("Ventas", format="$%,.2f"),
+                    "Div - Cupones": st.column_config.NumberColumn("Div - Cupones", format="$%,.2f"),
+                    "Ganancia Total": st.column_config.NumberColumn("Ganancia Total", format="$%,.2f")
                 }
             )
             
@@ -518,13 +518,13 @@ def main():
                 hide_index=True,
                 column_config={
                     "Activo": st.column_config.TextColumn("Activo", width="medium"),
-                    "Nominales": st.column_config.NumberColumn("Nominales", format="%.0f"),
-                    "Precio Actual": st.column_config.NumberColumn("Precio Actual", format="$%.2f"),
-                    "Valor Actual": st.column_config.NumberColumn("Valor Actual", format="$%.2f"),
-                    "Valor al Inicio": st.column_config.NumberColumn("Valor al Inicio", format="$%.2f"),
-                    "Ventas": st.column_config.NumberColumn("Ventas", format="$%.2f"),
-                    "Div - Cupones": st.column_config.NumberColumn("Div - Cupones", format="$%.2f"),
-                    "Ganancia Total": st.column_config.NumberColumn("Ganancia Total", format="$%.2f")
+                    "Nominales": st.column_config.NumberColumn("Nominales", format="%,.0f"),
+                    "Precio Actual": st.column_config.NumberColumn("Precio Actual", format="$%,.2f"),
+                    "Valor Actual": st.column_config.NumberColumn("Valor Actual", format="$%,.2f"),
+                    "Valor al Inicio": st.column_config.NumberColumn("Valor al Inicio", format="$%,.2f"),
+                    "Ventas": st.column_config.NumberColumn("Ventas", format="$%,.2f"),
+                    "Div - Cupones": st.column_config.NumberColumn("Div - Cupones", format="$%,.2f"),
+                    "Ganancia Total": st.column_config.NumberColumn("Ganancia Total", format="$%,.2f")
                 }
             )
             
