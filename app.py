@@ -448,20 +448,22 @@ def main():
                 gain_pct = (total_gain / total_invested * 100) if total_invested > 0 else 0
                 st.metric("Ganancia Total", f"${total_gain:,.2f}", f"{gain_pct:.1f}%")
             
+            # Formatear números con comas antes de mostrar
+            portfolio_display = portfolio_df.copy()
+            numeric_cols = ['Nominales', 'Precio Actual', 'Valor Actual', 'Invertido', 'Ventas', 'Div - Cupones', 'Ganancia Total']
+            for col in numeric_cols:
+                if col == 'Nominales':
+                    portfolio_display[col] = portfolio_display[col].apply(lambda x: f"{x:,.0f}")
+                else:
+                    portfolio_display[col] = portfolio_display[col].apply(lambda x: f"${x:,.2f}")
+            
             # Mostrar tabla
             st.dataframe(
-                portfolio_df,
+                portfolio_display,
                 use_container_width=True,
                 hide_index=True,
                 column_config={
-                    "Activo": st.column_config.TextColumn("Activo", width="medium"),
-                    "Nominales": st.column_config.NumberColumn("Nominales", format="%,.0f"),
-                    "Precio Actual": st.column_config.NumberColumn("Precio Actual", format="$%,.2f"),
-                    "Valor Actual": st.column_config.NumberColumn("Valor Actual", format="$%,.2f"),
-                    "Invertido": st.column_config.NumberColumn("Invertido", format="$%,.2f"),
-                    "Ventas": st.column_config.NumberColumn("Ventas", format="$%,.2f"),
-                    "Div - Cupones": st.column_config.NumberColumn("Div - Cupones", format="$%,.2f"),
-                    "Ganancia Total": st.column_config.NumberColumn("Ganancia Total", format="$%,.2f")
+                    "Activo": st.column_config.TextColumn("Activo", width="medium")
                 }
             )
             
@@ -511,20 +513,22 @@ def main():
                 gain_pct_evo = (total_gain_evo / total_value_inicio * 100) if total_value_inicio > 0 else 0
                 st.metric("Ganancia Total", f"${total_gain_evo:,.2f}", f"{gain_pct_evo:.1f}%")
             
+            # Formatear números con comas antes de mostrar
+            evolution_display = evolution_df.copy()
+            numeric_cols_evo = ['Nominales', 'Precio Actual', 'Valor Actual', 'Valor al Inicio', 'Ventas', 'Div - Cupones', 'Ganancia Total']
+            for col in numeric_cols_evo:
+                if col == 'Nominales':
+                    evolution_display[col] = evolution_display[col].apply(lambda x: f"{x:,.0f}")
+                else:
+                    evolution_display[col] = evolution_display[col].apply(lambda x: f"${x:,.2f}")
+            
             # Mostrar tabla de evolución
             st.dataframe(
-                evolution_df,
+                evolution_display,
                 use_container_width=True,
                 hide_index=True,
                 column_config={
-                    "Activo": st.column_config.TextColumn("Activo", width="medium"),
-                    "Nominales": st.column_config.NumberColumn("Nominales", format="%,.0f"),
-                    "Precio Actual": st.column_config.NumberColumn("Precio Actual", format="$%,.2f"),
-                    "Valor Actual": st.column_config.NumberColumn("Valor Actual", format="$%,.2f"),
-                    "Valor al Inicio": st.column_config.NumberColumn("Valor al Inicio", format="$%,.2f"),
-                    "Ventas": st.column_config.NumberColumn("Ventas", format="$%,.2f"),
-                    "Div - Cupones": st.column_config.NumberColumn("Div - Cupones", format="$%,.2f"),
-                    "Ganancia Total": st.column_config.NumberColumn("Ganancia Total", format="$%,.2f")
+                    "Activo": st.column_config.TextColumn("Activo", width="medium")
                 }
             )
             
