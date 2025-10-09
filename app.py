@@ -63,6 +63,8 @@ def load_data(filename='operaciones.xlsx'):
         operaciones_mapped['Cantidad'] = operaciones['Cantidad']
         operaciones_mapped['Precio'] = operaciones['Precio Promedio Ponderado']
         operaciones_mapped['Monto'] = operaciones['Importe']
+        # Columna I (índice 8): Tipo de moneda (Pesos o Dolares)
+        operaciones_mapped['Moneda'] = operaciones.iloc[:, 8] if len(operaciones.columns) > 8 else None
         
         # Limpiar datos
         operaciones_mapped['Tipo'] = operaciones_mapped['Tipo'].astype(str).str.strip()
@@ -107,6 +109,38 @@ def load_data(filename='operaciones.xlsx'):
     except Exception as e:
         st.error(f"Error al cargar el archivo: {str(e)}")
         return None, None
+
+def obtener_precio_activo(activo, fecha, precios, operaciones_df):
+    """Obtener el precio de un activo en una fecha específica, con fallback a DUMMY según moneda"""
+    
+    # Buscar precio directo del activo
+    asset_prices = precios[precios['Activo'] == activo]
+    if not asset_prices.empty:
+        available_prices = asset_prices[asset_prices['Fecha'] <= fecha]
+        if not available_prices.empty:
+            return available_prices.iloc[-1]['Precio']
+    
+    # Si no se encuentra el precio directo, buscar la moneda del activo
+    activo_ops = operaciones_df[operaciones_df['Activo'] == activo]
+    if not activo_ops.empty and 'Moneda' in activo_ops.columns:
+        # Obtener la moneda más reciente del activo
+        moneda = activo_ops['Moneda'].iloc[-1]
+        
+        # Determinar activo dummy según moneda
+        if pd.notna(moneda) and str(moneda).strip().lower() == 'pesos':
+            dummy_activo = 'DUMMY Pesos'
+        else:
+            dummy_activo = 'DUMMY Dolares'
+        
+        # Buscar precio del activo dummy
+        dummy_prices = precios[precios['Activo'] == dummy_activo]
+        if not dummy_prices.empty:
+            available_dummy_prices = dummy_prices[dummy_prices['Fecha'] <= fecha]
+            if not available_dummy_prices.empty:
+                return available_dummy_prices.iloc[-1]['Precio']
+    
+    # Si no se encuentra nada, retornar 0
+    return 0
 
 def calculate_current_portfolio(operaciones, precios, fecha_actual):
     """Calcular composición actual de la cartera con lógica de reseteo"""
@@ -176,29 +210,26 @@ def calculate_current_portfolio(operaciones, precios, fecha_actual):
         
         # Solo incluir activos con nominales positivos
         if current_nominals > 0:
-            # Obtener precio actual
-            asset_prices = precios[precios['Activo'] == asset]
-            if not asset_prices.empty:
-                # Buscar precio más reciente hasta la fecha actual
-                available_prices = asset_prices[asset_prices['Fecha'] <= pd.to_datetime(fecha_actual)]
-                if not available_prices.empty:
-                    current_price = available_prices.iloc[-1]['Precio']
-                    current_value = current_nominals * current_price
-                    
-                    # Ganancia total = (Valor Actual - Inversión) + Dividendos/Cupones + Ventas
-                    # Las ventas son capital recibido, por lo tanto se suman
-                    total_gain = (current_value - total_invested) + total_dividends_coupons + total_sales
-                    
-                    portfolio_data.append({
-                        'Activo': asset,
-                        'Nominales': current_nominals,
-                        'Precio Actual': current_price,
-                        'Valor Actual': current_value,
-                        'Invertido': total_invested,
-                        'Ventas': total_sales,
-                        'Div - Cupones': total_dividends_coupons,
-                        'Ganancia Total': total_gain
-                    })
+            # Obtener precio actual usando la función con fallback a DUMMY
+            current_price = obtener_precio_activo(asset, pd.to_datetime(fecha_actual), precios, operaciones)
+            
+            if current_price > 0:
+                current_value = current_nominals * current_price
+                
+                # Ganancia total = (Valor Actual - Inversión) + Dividendos/Cupones + Ventas
+                # Las ventas son capital recibido, por lo tanto se suman
+                total_gain = (current_value - total_invested) + total_dividends_coupons + total_sales
+                
+                portfolio_data.append({
+                    'Activo': asset,
+                    'Nominales': current_nominals,
+                    'Precio Actual': current_price,
+                    'Valor Actual': current_value,
+                    'Invertido': total_invested,
+                    'Ventas': total_sales,
+                    'Div - Cupones': total_dividends_coupons,
+                    'Ganancia Total': total_gain
+                })
     
     return pd.DataFrame(portfolio_data)
 
@@ -335,16 +366,9 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
             elif any(keyword in tipo_lower for keyword in ['dividendo', 'cupón', 'dividend', 'coupon', 'amortización', 'amortizacion']):
                 total_dividends_coupons_hasta_fin += op['Monto']
         
-        # Obtener precios al inicio y fin
-        asset_prices = precios[precios['Activo'] == asset]
-        
-        # Precio al inicio
-        available_prices_inicio = asset_prices[asset_prices['Fecha'] <= pd.to_datetime(fecha_inicio)]
-        precio_inicio = available_prices_inicio.iloc[-1]['Precio'] if not available_prices_inicio.empty else 0
-        
-        # Precio al fin
-        available_prices_fin = asset_prices[asset_prices['Fecha'] <= pd.to_datetime(fecha_fin)]
-        precio_fin = available_prices_fin.iloc[-1]['Precio'] if not available_prices_fin.empty else 0
+        # Obtener precios al inicio y fin usando la función con fallback a DUMMY
+        precio_inicio = obtener_precio_activo(asset, pd.to_datetime(fecha_inicio), precios, operaciones)
+        precio_fin = obtener_precio_activo(asset, pd.to_datetime(fecha_fin), precios, operaciones)
         
         # Calcular el costo de todas las compras dentro del período
         valor_inicio = 0
@@ -447,10 +471,8 @@ def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio
     
     # Agregar valor inicial si hay nominales al inicio del período
     if current_nominals_inicio > 0:
-        # Obtener precio al inicio del período
-        asset_prices = precios[precios['Activo'] == activo]
-        available_prices_inicio = asset_prices[asset_prices['Fecha'] <= pd.to_datetime(fecha_inicio)]
-        precio_inicio = available_prices_inicio.iloc[-1]['Precio'] if not available_prices_inicio.empty else 0
+        # Obtener precio al inicio del período usando la función con fallback a DUMMY
+        precio_inicio = obtener_precio_activo(activo, pd.to_datetime(fecha_inicio), precios, operaciones)
         
         detalle_data.append({
             'Fecha': fecha_inicio,
