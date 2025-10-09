@@ -710,7 +710,7 @@ def main():
         filename = "temp_file.xlsx"
         st.success(f"📁 Archivo cargado: {uploaded_file.name}")
     else:
-        filename = 'operaciones.xlsx'
+        filename = 'resumen.xlsx'
     
     # Cargar datos
     operaciones, precios = load_data(filename)
