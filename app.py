@@ -457,11 +457,17 @@ def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio
         # Formatear fechas
         detalle_df['Fecha'] = pd.to_datetime(detalle_df['Fecha']).dt.strftime('%d/%m/%Y')
         
-        # Formatear números con comas
+        # Formatear números con comas, manejando NaN
         detalle_display = detalle_df.copy()
-        detalle_display['Nominales'] = detalle_display['Nominales'].apply(lambda x: f"{x:,.0f}")
-        detalle_display['Precio'] = detalle_display['Precio'].apply(lambda x: f"${x:,.2f}")
-        detalle_display['Valor'] = detalle_display['Valor'].apply(lambda x: f"${x:,.2f}")
+        detalle_display['Nominales'] = detalle_display['Nominales'].apply(
+            lambda x: f"{x:,.0f}" if pd.notna(x) and x != 0 else ""
+        )
+        detalle_display['Precio'] = detalle_display['Precio'].apply(
+            lambda x: f"${x:,.2f}" if pd.notna(x) and x != 0 else ""
+        )
+        detalle_display['Valor'] = detalle_display['Valor'].apply(
+            lambda x: f"${x:,.2f}" if pd.notna(x) and x != 0 else ""
+        )
         
         # Mostrar tabla
         st.markdown(f"**Operaciones detalladas para {activo}:**")
