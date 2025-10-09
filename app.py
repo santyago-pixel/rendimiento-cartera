@@ -142,12 +142,106 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df):
     # Si no se encuentra nada, retornar 0
     return 0
 
+def aplicar_netting_cross_currency(operaciones):
+    """Aplicar netting cross-currency con ventana de ±1 día"""
+    
+    # Crear una copia para no modificar los datos originales
+    ops_netted = operaciones.copy()
+    
+    # Agrupar por activo
+    for activo in operaciones['Activo'].unique():
+        activo_ops = operaciones[operaciones['Activo'] == activo].copy()
+        activo_ops = activo_ops.sort_values('Fecha')
+        
+        # Identificar compras y ventas
+        compras = activo_ops[activo_ops['Tipo'].str.lower().str.contains('compra')].copy()
+        ventas = activo_ops[activo_ops['Tipo'].str.lower().str.contains('venta')].copy()
+        
+        # Procesar cada compra
+        for idx_compra, compra in compras.iterrows():
+            if compra['Cantidad'] <= 0:  # Ya procesada o no válida
+                continue
+                
+            compra_fecha = compra['Fecha']
+            compra_moneda = str(compra['Moneda']).strip().lower() if pd.notna(compra['Moneda']) else ''
+            compra_cantidad = compra['Cantidad']
+            compra_valor = compra['Monto']
+            
+            # Buscar ventas en ventana de ±1 día con moneda diferente
+            ventana_inicio = compra_fecha - pd.Timedelta(days=1)
+            ventana_fin = compra_fecha + pd.Timedelta(days=1)
+            
+            ventas_elegibles = ventas[
+                (ventas['Fecha'] >= ventana_inicio) & 
+                (ventas['Fecha'] <= ventana_fin) &
+                (ventas['Cantidad'] > 0)  # Solo ventas no procesadas
+            ].copy()
+            
+            # Filtrar por moneda diferente
+            ventas_elegibles = ventas_elegibles[
+                ventas_elegibles['Moneda'].apply(
+                    lambda x: str(x).strip().lower() if pd.notna(x) else ''
+                ) != compra_moneda
+            ]
+            
+            if ventas_elegibles.empty:
+                continue
+                
+            # Ordenar ventas por fecha (más cercanas primero)
+            ventas_elegibles = ventas_elegibles.sort_values('Fecha')
+            
+            # Aplicar netting
+            cantidad_restante = compra_cantidad
+            
+            for idx_venta, venta in ventas_elegibles.iterrows():
+                if cantidad_restante <= 0:
+                    break
+                    
+                venta_cantidad = venta['Cantidad']
+                venta_valor = venta['Monto']
+                
+                # Calcular netting
+                if venta_cantidad >= cantidad_restante:
+                    # La venta cubre o excede la compra
+                    ratio = cantidad_restante / venta_cantidad
+                    
+                    # Marcar compra como neteada
+                    ops_netted.loc[idx_compra, 'Cantidad'] = 0
+                    ops_netted.loc[idx_compra, 'Monto'] = 0
+                    
+                    # Marcar venta como parcialmente neteada
+                    ops_netted.loc[idx_venta, 'Cantidad'] = venta_cantidad - cantidad_restante
+                    ops_netted.loc[idx_venta, 'Monto'] = venta_valor * (1 - ratio)
+                    
+                    cantidad_restante = 0
+                else:
+                    # La venta es menor que la compra restante
+                    ratio = venta_cantidad / cantidad_restante
+                    
+                    # Reducir compra
+                    ops_netted.loc[idx_compra, 'Cantidad'] = cantidad_restante - venta_cantidad
+                    ops_netted.loc[idx_compra, 'Monto'] = compra_valor * (1 - ratio)
+                    
+                    # Marcar venta como neteada
+                    ops_netted.loc[idx_venta, 'Cantidad'] = 0
+                    ops_netted.loc[idx_venta, 'Monto'] = 0
+                    
+                    cantidad_restante -= venta_cantidad
+    
+    # Filtrar operaciones con cantidad > 0 (eliminar las neteadas completamente)
+    ops_netted = ops_netted[ops_netted['Cantidad'] > 0]
+    
+    return ops_netted
+
 def calculate_current_portfolio(operaciones, precios, fecha_actual):
     """Calcular composición actual de la cartera con lógica de reseteo"""
     
     # Convertir fechas (formato DD/MM/YYYY)
     operaciones['Fecha'] = pd.to_datetime(operaciones['Fecha'], dayfirst=True, errors='coerce')
     precios['Fecha'] = pd.to_datetime(precios['Fecha'], dayfirst=True, errors='coerce')
+    
+    # Aplicar netting cross-currency
+    operaciones = aplicar_netting_cross_currency(operaciones)
     
     # Obtener activos únicos
     assets = operaciones['Activo'].unique()
@@ -241,6 +335,9 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
     # Convertir fechas (formato DD/MM/YYYY)
     operaciones['Fecha'] = pd.to_datetime(operaciones['Fecha'], dayfirst=True, errors='coerce')
     precios['Fecha'] = pd.to_datetime(precios['Fecha'], dayfirst=True, errors='coerce')
+    
+    # Aplicar netting cross-currency
+    operaciones = aplicar_netting_cross_currency(operaciones)
     
     # Obtener activos únicos
     assets = operaciones['Activo'].unique()
@@ -427,6 +524,9 @@ def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio
     # Convertir fechas (formato DD/MM/YYYY)
     operaciones['Fecha'] = pd.to_datetime(operaciones['Fecha'], dayfirst=True, errors='coerce')
     precios['Fecha'] = pd.to_datetime(precios['Fecha'], dayfirst=True, errors='coerce')
+    
+    # Aplicar netting cross-currency
+    operaciones = aplicar_netting_cross_currency(operaciones)
     
     # Filtrar operaciones del activo
     asset_ops = operaciones[operaciones['Activo'] == activo].sort_values('Fecha')
