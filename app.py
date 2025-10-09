@@ -52,6 +52,9 @@ def load_data(filename='operaciones.xlsx'):
         # Cargar operaciones desde la hoja "Títulos" (fila 5 como encabezados)
         operaciones = pd.read_excel(filename, sheet_name='Títulos', header=4)  # header=4 significa fila 5 (0-indexed)
         
+        # Convertir fechas al cargar (formato DD/MM/YYYY)
+        operaciones['Fecha de Liquidación'] = pd.to_datetime(operaciones['Fecha de Liquidación'], dayfirst=True, errors='coerce')
+        
         # Mapear columnas a formato esperado
         operaciones_mapped = pd.DataFrame()
         operaciones_mapped['Fecha'] = operaciones['Fecha de Liquidación']
@@ -86,6 +89,9 @@ def load_data(filename='operaciones.xlsx'):
         fecha_col = precios.columns[0]
         precios = precios.rename(columns={fecha_col: 'Fecha'})
         
+        # Convertir fechas de precios (formato DD/MM/YYYY)
+        precios['Fecha'] = pd.to_datetime(precios['Fecha'], dayfirst=True, errors='coerce')
+        
         precios_long = precios.melt(
             id_vars=['Fecha'], 
             var_name='Activo', 
@@ -105,9 +111,9 @@ def load_data(filename='operaciones.xlsx'):
 def calculate_current_portfolio(operaciones, precios, fecha_actual):
     """Calcular composición actual de la cartera con lógica de reseteo"""
     
-    # Convertir fechas
-    operaciones['Fecha'] = pd.to_datetime(operaciones['Fecha'])
-    precios['Fecha'] = pd.to_datetime(precios['Fecha'])
+    # Convertir fechas (formato DD/MM/YYYY)
+    operaciones['Fecha'] = pd.to_datetime(operaciones['Fecha'], dayfirst=True, errors='coerce')
+    precios['Fecha'] = pd.to_datetime(precios['Fecha'], dayfirst=True, errors='coerce')
     
     # Obtener activos únicos
     assets = operaciones['Activo'].unique()
@@ -199,9 +205,9 @@ def calculate_current_portfolio(operaciones, precios, fecha_actual):
 def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin):
     """Calcular evolución de la cartera en un rango de fechas"""
     
-    # Convertir fechas
-    operaciones['Fecha'] = pd.to_datetime(operaciones['Fecha'])
-    precios['Fecha'] = pd.to_datetime(precios['Fecha'])
+    # Convertir fechas (formato DD/MM/YYYY)
+    operaciones['Fecha'] = pd.to_datetime(operaciones['Fecha'], dayfirst=True, errors='coerce')
+    precios['Fecha'] = pd.to_datetime(precios['Fecha'], dayfirst=True, errors='coerce')
     
     # Obtener activos únicos
     assets = operaciones['Activo'].unique()
@@ -386,9 +392,9 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
 def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio, fecha_fin):
     """Mostrar análisis detallado de un activo específico"""
     
-    # Convertir fechas
-    operaciones['Fecha'] = pd.to_datetime(operaciones['Fecha'])
-    precios['Fecha'] = pd.to_datetime(precios['Fecha'])
+    # Convertir fechas (formato DD/MM/YYYY)
+    operaciones['Fecha'] = pd.to_datetime(operaciones['Fecha'], dayfirst=True, errors='coerce')
+    precios['Fecha'] = pd.to_datetime(precios['Fecha'], dayfirst=True, errors='coerce')
     
     # Filtrar operaciones del activo
     asset_ops = operaciones[operaciones['Activo'] == activo].sort_values('Fecha')
