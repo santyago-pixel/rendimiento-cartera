@@ -203,7 +203,9 @@ def calculate_current_portfolio(operaciones, precios, fecha_actual):
                 current_nominals += op['Cantidad']
                 total_invested += op['Monto']
             elif 'venta' in tipo_lower:
-                current_nominals -= op['Cantidad']
+                # Las ventas pueden tener nominales negativos en el Excel, ajustar signo
+                cantidad_venta = abs(op['Cantidad']) if op['Cantidad'] < 0 else op['Cantidad']
+                current_nominals -= cantidad_venta
                 total_sales += op['Monto']
             elif any(keyword in tipo_lower for keyword in ['dividendo', 'cupón', 'dividend', 'coupon', 'amortización', 'amortizacion']):
                 total_dividends_coupons += op['Monto']
@@ -263,7 +265,9 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
             if 'compra' in tipo_lower:
                 temp_nominals += op['Cantidad']
             elif 'venta' in tipo_lower:
-                temp_nominals -= op['Cantidad']
+                # Las ventas pueden tener nominales negativos en el Excel, ajustar signo
+                cantidad_venta = abs(op['Cantidad']) if op['Cantidad'] < 0 else op['Cantidad']
+                temp_nominals -= cantidad_venta
             
             # Verificar si en algún momento del período tuvo nominales positivos
             if (op['Fecha'] >= pd.to_datetime(fecha_inicio) and 
@@ -338,7 +342,9 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
                 current_nominals_inicio += op['Cantidad']
                 total_invested_hasta_inicio += op['Monto']
             elif 'venta' in tipo_lower:
-                current_nominals_inicio -= op['Cantidad']
+                # Las ventas pueden tener nominales negativos en el Excel, ajustar signo
+                cantidad_venta = abs(op['Cantidad']) if op['Cantidad'] < 0 else op['Cantidad']
+                current_nominals_inicio -= cantidad_venta
                 total_sales_hasta_inicio += op['Monto']
             elif any(keyword in tipo_lower for keyword in ['dividendo', 'cupón', 'dividend', 'coupon', 'amortización', 'amortizacion']):
                 total_dividends_coupons_hasta_inicio += op['Monto']
@@ -361,7 +367,9 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
                 current_nominals_fin += op['Cantidad']
                 total_invested_hasta_fin += op['Monto']
             elif 'venta' in tipo_lower:
-                current_nominals_fin -= op['Cantidad']
+                # Las ventas pueden tener nominales negativos en el Excel, ajustar signo
+                cantidad_venta = abs(op['Cantidad']) if op['Cantidad'] < 0 else op['Cantidad']
+                current_nominals_fin -= cantidad_venta
                 total_sales_hasta_fin += op['Monto']
             elif any(keyword in tipo_lower for keyword in ['dividendo', 'cupón', 'dividend', 'coupon', 'amortización', 'amortizacion']):
                 total_dividends_coupons_hasta_fin += op['Monto']
@@ -427,18 +435,20 @@ def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio
     running_nominals = 0
     last_reset_date = None
     
-    # Recorrer todas las operaciones hasta la fecha de inicio para encontrar el último reset
-    for _, op in asset_ops.iterrows():
-        if op['Fecha'] > pd.to_datetime(fecha_inicio):
-            break
+        # Recorrer todas las operaciones hasta la fecha de inicio para encontrar el último reset
+        for _, op in asset_ops.iterrows():
+            if op['Fecha'] > pd.to_datetime(fecha_inicio):
+                break
+                
+            previous_nominals = running_nominals
             
-        previous_nominals = running_nominals
-        
-        tipo_lower = op['Tipo'].strip().lower()
-        if 'compra' in tipo_lower:
-            running_nominals += op['Cantidad']
-        elif 'venta' in tipo_lower:
-            running_nominals -= op['Cantidad']
+            tipo_lower = op['Tipo'].strip().lower()
+            if 'compra' in tipo_lower:
+                running_nominals += op['Cantidad']
+            elif 'venta' in tipo_lower:
+                # Las ventas pueden tener nominales negativos en el Excel, ajustar signo
+                cantidad_venta = abs(op['Cantidad']) if op['Cantidad'] < 0 else op['Cantidad']
+                running_nominals -= cantidad_venta
         
         # Si los nominales pasan de positivo a cero o negativo, es un reset
         if previous_nominals > 0 and running_nominals <= 0:
@@ -461,10 +471,13 @@ def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio
     for _, op in ops_since_reset.iterrows():
         if op['Fecha'] > pd.to_datetime(fecha_inicio):
             break
-        if op['Tipo'].strip() == 'Compra':
+        tipo_lower = op['Tipo'].strip().lower()
+        if 'compra' in tipo_lower:
             current_nominals_inicio += op['Cantidad']
-        elif op['Tipo'].strip() == 'Venta':
-            current_nominals_inicio -= op['Cantidad']
+        elif 'venta' in tipo_lower:
+            # Las ventas pueden tener nominales negativos en el Excel, ajustar signo
+            cantidad_venta = abs(op['Cantidad']) if op['Cantidad'] < 0 else op['Cantidad']
+            current_nominals_inicio -= cantidad_venta
     
     # PASO 4: Crear tabla detallada
     detalle_data = []
