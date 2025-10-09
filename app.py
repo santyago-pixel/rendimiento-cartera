@@ -143,7 +143,7 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df):
     return 0
 
 def aplicar_netting_cross_currency(operaciones):
-    """Aplicar netting cross-currency con ventana de ±1 día"""
+    """Aplicar netting cross-currency con ventana de ±7 días"""
     
     # Crear una copia para no modificar los datos originales
     ops_netted = operaciones.copy()
@@ -167,9 +167,9 @@ def aplicar_netting_cross_currency(operaciones):
             compra_cantidad = compra['Cantidad']
             compra_valor = compra['Monto']
             
-            # Buscar ventas en ventana de ±1 día con moneda diferente
-            ventana_inicio = compra_fecha - pd.Timedelta(days=1)
-            ventana_fin = compra_fecha + pd.Timedelta(days=1)
+            # Buscar ventas en ventana de ±7 días con moneda diferente
+            ventana_inicio = compra_fecha - pd.Timedelta(days=7)
+            ventana_fin = compra_fecha + pd.Timedelta(days=7)
             
             ventas_elegibles = ventas[
                 (ventas['Fecha'] >= ventana_inicio) & 
