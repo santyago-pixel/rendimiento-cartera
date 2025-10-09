@@ -209,39 +209,40 @@ def aplicar_netting_cross_currency(operaciones):
                 if cantidad_restante <= 0:
                     break
                     
-                venta_cantidad = venta['Cantidad']
+                venta_cantidad = venta['Cantidad']  # Negativo (ej: -1.123.195)
+                venta_cantidad_abs = abs(venta_cantidad)  # Positivo (ej: 1.123.195)
                 venta_valor = venta['Monto']
                 
-                # Calcular netting
-                if venta_cantidad >= cantidad_restante:
+                # Calcular netting usando valores absolutos
+                if venta_cantidad_abs >= cantidad_restante:
                     # La venta cubre o excede la compra
-                    ratio = cantidad_restante / venta_cantidad
+                    ratio = cantidad_restante / venta_cantidad_abs
                     
                     # Marcar compra como neteada
                     ops_netted.loc[idx_compra, 'Cantidad'] = 0
                     ops_netted.loc[idx_compra, 'Monto'] = 0
                     
-                    # Marcar venta como parcialmente neteada
-                    ops_netted.loc[idx_venta, 'Cantidad'] = venta_cantidad - cantidad_restante
+                    # Marcar venta como parcialmente neteada (mantener signo negativo)
+                    ops_netted.loc[idx_venta, 'Cantidad'] = -(venta_cantidad_abs - cantidad_restante)
                     ops_netted.loc[idx_venta, 'Monto'] = venta_valor * (1 - ratio)
                     
                     cantidad_restante = 0
                 else:
                     # La venta es menor que la compra restante
-                    ratio = venta_cantidad / cantidad_restante
+                    ratio = venta_cantidad_abs / cantidad_restante
                     
                     # Reducir compra
-                    ops_netted.loc[idx_compra, 'Cantidad'] = cantidad_restante - venta_cantidad
+                    ops_netted.loc[idx_compra, 'Cantidad'] = cantidad_restante - venta_cantidad_abs
                     ops_netted.loc[idx_compra, 'Monto'] = compra_valor * (1 - ratio)
                     
                     # Marcar venta como neteada
                     ops_netted.loc[idx_venta, 'Cantidad'] = 0
                     ops_netted.loc[idx_venta, 'Monto'] = 0
                     
-                    cantidad_restante -= venta_cantidad
+                    cantidad_restante -= venta_cantidad_abs
     
-    # Filtrar operaciones con cantidad > 0 (eliminar las neteadas completamente)
-    ops_netted = ops_netted[ops_netted['Cantidad'] > 0]
+    # Filtrar operaciones con cantidad != 0 (eliminar las neteadas completamente)
+    ops_netted = ops_netted[ops_netted['Cantidad'] != 0]
     
     return ops_netted
 
