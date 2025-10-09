@@ -163,7 +163,7 @@ def aplicar_netting_cross_currency(operaciones):
                 continue
                 
             compra_fecha = compra['Fecha']
-            compra_moneda = compra['Moneda']  # Mantener valor original para la función detectar_moneda
+            compra_moneda = compra['Moneda']  # Usar la columna Moneda
             compra_cantidad = compra['Cantidad']
             compra_valor = compra['Monto']
             
@@ -182,9 +182,11 @@ def aplicar_netting_cross_currency(operaciones):
                 if pd.isna(texto):
                     return 'unknown'
                 texto_lower = str(texto).strip().lower()
-                if 'dólar' in texto_lower or 'dolar' in texto_lower:
+                # Detectar dólares (más variaciones)
+                if any(keyword in texto_lower for keyword in ['dólar', 'dolar', 'usd', 'u$s', 'u$', 'us$', 'billete']):
                     return 'dolar'
-                elif 'pesos' in texto_lower or 'peso' in texto_lower:
+                # Detectar pesos (más variaciones)
+                elif any(keyword in texto_lower for keyword in ['pesos', 'peso', 'contado', 'ars']):
                     return 'pesos'
                 else:
                     return 'unknown'
