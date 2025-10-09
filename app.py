@@ -550,27 +550,33 @@ def main():
             
             with col1:
                 total_assets = len(portfolio_df)
-                st.metric("Total de Activos", total_assets)
+                st.markdown('<div style="text-align: center; font-size: 0.8em;">Total de Activos</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.6em; font-weight: bold;">{total_assets}</div>', unsafe_allow_html=True)
             
             with col2:
                 total_value = portfolio_df['Valor Actual'].sum()
-                st.metric("Valor Total", f"${total_value:,.2f}")
+                st.markdown('<div style="text-align: center; font-size: 0.8em;">Valor Total</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.6em; font-weight: bold;">${total_value:,.0f}</div>', unsafe_allow_html=True)
             
             with col3:
                 total_invested = portfolio_df['Invertido'].sum()
-                st.metric("Total Invertido", f"${total_invested:,.2f}")
+                st.markdown('<div style="text-align: center; font-size: 0.8em;">Total Invertido</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.6em; font-weight: bold;">${total_invested:,.0f}</div>', unsafe_allow_html=True)
             
             with col4:
                 # Flujos netos = Ventas + Div-Cupones
                 total_sales = portfolio_df['Ventas'].sum()
                 total_div_cupones = portfolio_df['Div - Cupones'].sum()
                 flujos_netos = total_sales + total_div_cupones
-                st.metric("Flujos Netos", f"${flujos_netos:,.2f}")
+                st.markdown('<div style="text-align: center; font-size: 0.8em;">Flujos Netos</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.6em; font-weight: bold;">${flujos_netos:,.0f}</div>', unsafe_allow_html=True)
             
             with col5:
                 total_gain = portfolio_df['Ganancia Total'].sum()
                 gain_pct = (total_gain / total_invested * 100) if total_invested > 0 else 0
-                st.metric("Ganancia Total", f"${total_gain:,.2f}", f"{gain_pct:.1f}%")
+                st.markdown('<div style="text-align: center; font-size: 0.8em;">Ganancia Total</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.6em; font-weight: bold;">${total_gain:,.0f}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.2em; color: #00C851;">{gain_pct:.1f}%</div>', unsafe_allow_html=True)
             
             # Formatear números con comas antes de mostrar
             portfolio_display = portfolio_df.copy()
@@ -615,27 +621,33 @@ def main():
             
             with col1:
                 total_assets_evo = len(evolution_df)
-                st.metric("Total de Activos", total_assets_evo)
+                st.markdown('<div style="text-align: center; font-size: 0.8em;">Total de Activos</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.6em; font-weight: bold;">{total_assets_evo}</div>', unsafe_allow_html=True)
             
             with col2:
                 total_value_evo = evolution_df['Valor Actual'].sum()
-                st.metric("Valor Total", f"${total_value_evo:,.2f}")
+                st.markdown('<div style="text-align: center; font-size: 0.8em;">Valor Total</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.6em; font-weight: bold;">${total_value_evo:,.0f}</div>', unsafe_allow_html=True)
             
             with col3:
                 total_value_inicio = evolution_df['Valor al Inicio'].sum()
-                st.metric("Valor al Inicio", f"${total_value_inicio:,.2f}")
+                st.markdown('<div style="text-align: center; font-size: 0.8em;">Valor al Inicio</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.6em; font-weight: bold;">${total_value_inicio:,.0f}</div>', unsafe_allow_html=True)
             
             with col4:
                 # Flujos netos = Ventas + Div-Cupones
                 total_sales_evo = evolution_df['Ventas'].sum()
                 total_div_cupones_evo = evolution_df['Div - Cupones'].sum()
                 flujos_netos_evo = total_sales_evo + total_div_cupones_evo
-                st.metric("Flujos Netos", f"${flujos_netos_evo:,.2f}")
+                st.markdown('<div style="text-align: center; font-size: 0.8em;">Flujos Netos</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.6em; font-weight: bold;">${flujos_netos_evo:,.0f}</div>', unsafe_allow_html=True)
             
             with col5:
                 total_gain_evo = evolution_df['Ganancia Total'].sum()
                 gain_pct_evo = (total_gain_evo / total_value_inicio * 100) if total_value_inicio > 0 else 0
-                st.metric("Ganancia Total", f"${total_gain_evo:,.2f}", f"{gain_pct_evo:.1f}%")
+                st.markdown('<div style="text-align: center; font-size: 0.8em;">Ganancia Total</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.6em; font-weight: bold;">${total_gain_evo:,.0f}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="text-align: center; font-size: 1.2em; color: #00C851;">{gain_pct_evo:.1f}%</div>', unsafe_allow_html=True)
             
             # Formatear números con comas antes de mostrar
             evolution_display = evolution_df.copy()
