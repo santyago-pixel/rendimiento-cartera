@@ -174,7 +174,7 @@ def aplicar_netting_cross_currency(operaciones):
             ventas_elegibles = ventas[
                 (ventas['Fecha'] >= ventana_inicio) & 
                 (ventas['Fecha'] <= ventana_fin) &
-                (ventas['Cantidad'] > 0)  # Solo ventas no procesadas
+                (ventas['Cantidad'] < 0)  # Solo ventas no procesadas (cantidad negativa)
             ].copy()
             
             # Filtrar por moneda diferente (usando detección de palabras clave)
