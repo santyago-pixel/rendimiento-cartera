@@ -49,24 +49,37 @@ st.markdown("""
 def load_data(filename='operaciones.xlsx'):
     """Cargar datos automáticamente desde operaciones.xlsx o archivo especificado"""
     try:
-        # Cargar operaciones
-        operaciones = pd.read_excel(filename, sheet_name='Operaciones')
+        # Cargar operaciones desde la hoja "Títulos" (fila 5 como encabezados)
+        operaciones = pd.read_excel(filename, sheet_name='Títulos', header=4)  # header=4 significa fila 5 (0-indexed)
         
         # Mapear columnas a formato esperado
         operaciones_mapped = pd.DataFrame()
-        operaciones_mapped['Fecha'] = operaciones['Fecha']
-        operaciones_mapped['Tipo'] = operaciones['Operacion']
-        operaciones_mapped['Activo'] = operaciones['Activo']
-        operaciones_mapped['Cantidad'] = operaciones['Nominales']
-        operaciones_mapped['Precio'] = operaciones['Precio']
-        operaciones_mapped['Monto'] = operaciones['Valor']
+        operaciones_mapped['Fecha'] = operaciones['Fecha de Liquidación']
+        operaciones_mapped['Tipo'] = operaciones['Descripción']
+        operaciones_mapped['Activo'] = operaciones['RIC']
+        operaciones_mapped['Cantidad'] = operaciones['Cantidad']
+        operaciones_mapped['Precio'] = operaciones['Precio Promedio Ponderado']
+        operaciones_mapped['Monto'] = operaciones['Importe']
         
         # Limpiar datos
-        operaciones_mapped['Tipo'] = operaciones_mapped['Tipo'].str.strip()
-        operaciones_mapped['Activo'] = operaciones_mapped['Activo'].str.strip()
+        operaciones_mapped['Tipo'] = operaciones_mapped['Tipo'].astype(str).str.strip()
+        operaciones_mapped['Activo'] = operaciones_mapped['Activo'].astype(str).str.strip()
+        
+        # Filtrar filas que contengan palabras clave válidas en la descripción
+        palabras_clave = ['compra', 'venta', 'cupón', 'amortización', 'dividendo']
+        operaciones_mapped['Tipo_Lower'] = operaciones_mapped['Tipo'].str.lower()
+        
+        # Crear máscara para filtrar solo operaciones válidas
+        mask_validas = operaciones_mapped['Tipo_Lower'].str.contains('|'.join(palabras_clave), na=False)
+        operaciones_mapped = operaciones_mapped[mask_validas].copy()
+        
+        # Limpiar la columna temporal
+        operaciones_mapped = operaciones_mapped.drop('Tipo_Lower', axis=1)
+        
+        # Eliminar filas con valores nulos
         operaciones_mapped = operaciones_mapped.dropna(subset=['Fecha', 'Tipo', 'Activo', 'Monto'])
         
-        # Cargar precios
+        # Cargar precios (mantiene la misma estructura)
         precios = pd.read_excel(filename, sheet_name='Precios')
         
         # Convertir a formato largo
@@ -145,13 +158,14 @@ def calculate_current_portfolio(operaciones, precios, fecha_actual):
         total_dividends_coupons = 0
         
         for _, op in ops_since_reset.iterrows():
-            if op['Tipo'].strip() == 'Compra':
+            tipo_lower = op['Tipo'].strip().lower()
+            if 'compra' in tipo_lower:
                 current_nominals += op['Cantidad']
                 total_invested += op['Monto']
-            elif op['Tipo'].strip() == 'Venta':
+            elif 'venta' in tipo_lower:
                 current_nominals -= op['Cantidad']
                 total_sales += op['Monto']
-            elif any(keyword in op['Tipo'].strip().lower() for keyword in ['dividendo', 'cupon', 'dividend', 'coupon', 'amortizacion', 'amortización']):
+            elif any(keyword in tipo_lower for keyword in ['dividendo', 'cupón', 'dividend', 'coupon', 'amortización', 'amortizacion']):
                 total_dividends_coupons += op['Monto']
         
         # Solo incluir activos con nominales positivos
@@ -208,9 +222,10 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
             if op['Fecha'] > pd.to_datetime(fecha_fin):
                 break
                 
-            if op['Tipo'].strip() == 'Compra':
+            tipo_lower = op['Tipo'].strip().lower()
+            if 'compra' in tipo_lower:
                 temp_nominals += op['Cantidad']
-            elif op['Tipo'].strip() == 'Venta':
+            elif 'venta' in tipo_lower:
                 temp_nominals -= op['Cantidad']
             
             # Verificar si en algún momento del período tuvo nominales positivos
@@ -281,13 +296,14 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
         ops_until_inicio = ops_since_reset[ops_since_reset['Fecha'] <= pd.to_datetime(fecha_inicio)]
         
         for _, op in ops_until_inicio.iterrows():
-            if op['Tipo'].strip() == 'Compra':
+            tipo_lower = op['Tipo'].strip().lower()
+            if 'compra' in tipo_lower:
                 current_nominals_inicio += op['Cantidad']
                 total_invested_hasta_inicio += op['Monto']
-            elif op['Tipo'].strip() == 'Venta':
+            elif 'venta' in tipo_lower:
                 current_nominals_inicio -= op['Cantidad']
                 total_sales_hasta_inicio += op['Monto']
-            elif any(keyword in op['Tipo'].strip().lower() for keyword in ['dividendo', 'cupon', 'dividend', 'coupon', 'amortizacion', 'amortización']):
+            elif any(keyword in tipo_lower for keyword in ['dividendo', 'cupón', 'dividend', 'coupon', 'amortización', 'amortizacion']):
                 total_dividends_coupons_hasta_inicio += op['Monto']
         
         # Calcular nominales al fin del rango (desde reset hasta fecha_fin)
@@ -303,13 +319,14 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
         ]
         
         for _, op in ops_en_rango.iterrows():
-            if op['Tipo'].strip() == 'Compra':
+            tipo_lower = op['Tipo'].strip().lower()
+            if 'compra' in tipo_lower:
                 current_nominals_fin += op['Cantidad']
                 total_invested_hasta_fin += op['Monto']
-            elif op['Tipo'].strip() == 'Venta':
+            elif 'venta' in tipo_lower:
                 current_nominals_fin -= op['Cantidad']
                 total_sales_hasta_fin += op['Monto']
-            elif any(keyword in op['Tipo'].strip().lower() for keyword in ['dividendo', 'cupon', 'dividend', 'coupon', 'amortizacion', 'amortización']):
+            elif any(keyword in tipo_lower for keyword in ['dividendo', 'cupón', 'dividend', 'coupon', 'amortización', 'amortizacion']):
                 total_dividends_coupons_hasta_fin += op['Monto']
         
         # Obtener precios al inicio y fin
@@ -335,7 +352,8 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
         # Filtrar solo las operaciones de compra en el período
         compras_en_periodo = 0
         for _, op in ops_en_rango.iterrows():
-            if op['Tipo'].strip() == 'Compra':
+            tipo_lower = op['Tipo'].strip().lower()
+            if 'compra' in tipo_lower:
                 compras_en_periodo += op['Monto']
         
         valor_inicio += compras_en_periodo
@@ -386,9 +404,10 @@ def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio
             
         previous_nominals = running_nominals
         
-        if op['Tipo'].strip() == 'Compra':
+        tipo_lower = op['Tipo'].strip().lower()
+        if 'compra' in tipo_lower:
             running_nominals += op['Cantidad']
-        elif op['Tipo'].strip() == 'Venta':
+        elif 'venta' in tipo_lower:
             running_nominals -= op['Cantidad']
         
         # Si los nominales pasan de positivo a cero o negativo, es un reset
