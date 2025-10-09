@@ -688,17 +688,18 @@ def main():
         # Análisis detallado por activo
         if not evolution_df.empty:
             st.markdown("---")
-            st.subheader("📋 Análisis Detallado por Activo")
+            st.subheader("📋 Análisis Detallado de Evolución por Activo")
             
             # Selector de activos
-            activos_disponibles = evolution_df['Activo'].tolist()
+            activos_disponibles = ["Seleccionar"] + evolution_df['Activo'].tolist()
             activo_seleccionado = st.selectbox(
                 "Seleccionar activo para análisis detallado:",
                 activos_disponibles,
+                index=0,  # "Seleccionar" es la opción por defecto
                 help="Selecciona un activo para ver todas las operaciones consideradas en el período"
             )
             
-            if activo_seleccionado:
+            if activo_seleccionado and activo_seleccionado != "Seleccionar":
                 # Mostrar análisis detallado del activo seleccionado
                 mostrar_analisis_detallado_activo(operaciones, precios, activo_seleccionado, fecha_inicio, fecha_fin)
     else:
