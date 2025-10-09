@@ -46,8 +46,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-def load_data(filename='resumen.xlsx'):
-    """Cargar datos automáticamente desde resumen.xlsx o archivo especificado"""
+def load_data(filename='Resumen.xlsx'):
+    """Cargar datos automáticamente desde Resumen.xlsx o archivo especificado"""
     try:
         # Cargar operaciones desde la hoja "Títulos" (fila 5 como encabezados)
         operaciones = pd.read_excel(filename, sheet_name='Títulos', header=4)  # header=4 significa fila 5 (0-indexed)
@@ -710,7 +710,7 @@ def main():
         filename = "temp_file.xlsx"
         st.success(f"📁 Archivo cargado: {uploaded_file.name}")
     else:
-        filename = 'resumen.xlsx'
+        filename = 'Resumen.xlsx'
     
     # Cargar datos
     operaciones, precios = load_data(filename)
