@@ -435,20 +435,20 @@ def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio
     running_nominals = 0
     last_reset_date = None
     
-        # Recorrer todas las operaciones hasta la fecha de inicio para encontrar el último reset
-        for _, op in asset_ops.iterrows():
-            if op['Fecha'] > pd.to_datetime(fecha_inicio):
-                break
-                
-            previous_nominals = running_nominals
+    # Recorrer todas las operaciones hasta la fecha de inicio para encontrar el último reset
+    for _, op in asset_ops.iterrows():
+        if op['Fecha'] > pd.to_datetime(fecha_inicio):
+            break
             
-            tipo_lower = op['Tipo'].strip().lower()
-            if 'compra' in tipo_lower:
-                running_nominals += op['Cantidad']
-            elif 'venta' in tipo_lower:
-                # Las ventas pueden tener nominales negativos en el Excel, ajustar signo
-                cantidad_venta = abs(op['Cantidad']) if op['Cantidad'] < 0 else op['Cantidad']
-                running_nominals -= cantidad_venta
+        previous_nominals = running_nominals
+        
+        tipo_lower = op['Tipo'].strip().lower()
+        if 'compra' in tipo_lower:
+            running_nominals += op['Cantidad']
+        elif 'venta' in tipo_lower:
+            # Las ventas pueden tener nominales negativos en el Excel, ajustar signo
+            cantidad_venta = abs(op['Cantidad']) if op['Cantidad'] < 0 else op['Cantidad']
+            running_nominals -= cantidad_venta
         
         # Si los nominales pasan de positivo a cero o negativo, es un reset
         if previous_nominals > 0 and running_nominals <= 0:
