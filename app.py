@@ -143,10 +143,6 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df):
         
         moneda_tipo = detectar_moneda(moneda)
         
-        # Debug: mostrar información en Streamlit
-        import streamlit as st
-        st.write(f"🔍 **DEBUG** - Activo: {activo}, Moneda: '{moneda}', Tipo detectado: {moneda_tipo}")
-        
         # Determinar activo dummy según moneda detectada
         if moneda_tipo == 'pesos':
             dummy_activo = 'DUMMY Pesos'
@@ -154,17 +150,13 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df):
             dummy_activo = 'DUMMY USD'
         
         # Buscar precio del activo dummy
-        st.write(f"🔍 **DEBUG** - Buscando dummy activo: '{dummy_activo}'")
         dummy_prices = precios[precios['Activo'] == dummy_activo]
-        st.write(f"🔍 **DEBUG** - Dummy prices encontradas: {len(dummy_prices)}")
         if not dummy_prices.empty:
             available_dummy_prices = dummy_prices[dummy_prices['Fecha'] <= fecha]
             if not available_dummy_prices.empty:
                 return available_dummy_prices.iloc[-1]['Precio']
     
     # Si no se encuentra nada, retornar 0
-    import streamlit as st
-    st.write(f"🔍 **DEBUG** - No se encontró precio para {activo}")
     return 0
 
 def aplicar_netting_cross_currency(operaciones):
