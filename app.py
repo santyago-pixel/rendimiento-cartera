@@ -131,8 +131,9 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df):
             if pd.isna(texto):
                 return 'unknown'
             texto_lower = str(texto).strip().lower()
-            # Detectar dólares (más variaciones)
-            if any(keyword in texto_lower for keyword in ['dólar', 'dolar', 'usd', 'u$s', 'u$', 'us$', 'billete']):
+            # Detectar dólares (más variaciones - cualquier combinación de mayúsculas/minúsculas)
+            keywords_dolar = ['dólar', 'dolar', 'usd', 'u$s', 'u$', 'us$', 'billete']
+            if any(keyword in texto_lower for keyword in keywords_dolar):
                 return 'dolar'
             # Detectar pesos (más variaciones)
             elif any(keyword in texto_lower for keyword in ['pesos', 'peso', 'contado', 'ars']):
@@ -198,8 +199,9 @@ def aplicar_netting_cross_currency(operaciones):
                 if pd.isna(texto):
                     return 'unknown'
                 texto_lower = str(texto).strip().lower()
-                # Detectar dólares (más variaciones)
-                if any(keyword in texto_lower for keyword in ['dólar', 'dolar', 'usd', 'u$s', 'u$', 'us$', 'billete']):
+                # Detectar dólares (más variaciones - cualquier combinación de mayúsculas/minúsculas)
+                keywords_dolar = ['dólar', 'dolar', 'usd', 'u$s', 'u$', 'us$', 'billete']
+                if any(keyword in texto_lower for keyword in keywords_dolar):
                     return 'dolar'
                 # Detectar pesos (más variaciones)
                 elif any(keyword in texto_lower for keyword in ['pesos', 'peso', 'contado', 'ars']):
