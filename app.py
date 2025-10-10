@@ -147,6 +147,17 @@ def load_data(filename='Resumen.xlsx'):
         # Usar columna I (índice 8) como especificaste
         operaciones_mapped['Moneda'] = operaciones.iloc[:, 8] if len(operaciones.columns) > 8 else None
         
+        # Debug: Verificar el mapeo de Moneda
+        st.write(f"🔍 DEBUG MAPEO - Primeros 5 valores de Moneda en operaciones_mapped:")
+        st.write(f"🔍 DEBUG MAPEO - {operaciones_mapped['Moneda'].head().tolist()}")
+        
+        # Debug específico para operaciones de junio 2025
+        ops_junio = operaciones_mapped[operaciones_mapped['Fecha'].dt.strftime('%d/%m/%Y').isin(['10/06/2025', '18/06/2025', '25/06/2025'])]
+        if not ops_junio.empty:
+            st.write(f"🔍 DEBUG JUNIO - Operaciones de junio encontradas:")
+            for idx, row in ops_junio.iterrows():
+                st.write(f"🔍 DEBUG JUNIO - Fecha: {row['Fecha'].strftime('%d/%m/%Y')}, Moneda: '{row['Moneda']}', Precio: {row['Precio']}")
+        
         # Limpiar datos
         operaciones_mapped['Tipo'] = operaciones_mapped['Tipo'].astype(str).str.strip()
         operaciones_mapped['Activo'] = operaciones_mapped['Activo'].astype(str).str.strip()
