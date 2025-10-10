@@ -70,48 +70,22 @@ def ajustar_precios_operaciones(operaciones, tipo_cambio_data):
     for idx, row in operaciones_ajustadas.iterrows():
         moneda_tipo = detectar_moneda(row['Moneda'])
         
-        # Debug para operaciones específicas
-        if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
-            import streamlit as st
-            st.write(f"🔍 DEBUG FILTRO - Fecha: {row['Fecha'].strftime('%d/%m/%Y')}, Moneda: {row['Moneda']}, Tipo detectado: {moneda_tipo}, Precio: {row['Precio']}")
-        
         if moneda_tipo == 'pesos' and pd.notna(row['Precio']):
             # Obtener el tipo de cambio para la fecha de la operación
             fecha_op = row['Fecha']
             tipo_cambio_row = tipo_cambio_data[tipo_cambio_data['Fecha'] <= fecha_op]
-            
-            # Debug para operaciones específicas
-            if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
-                st.write(f"🔍 DEBUG TIPO CAMBIO - Fecha: {fecha_op.strftime('%d/%m/%Y')}, Filas encontradas: {len(tipo_cambio_row)}")
-                if not tipo_cambio_row.empty:
-                    st.write(f"🔍 DEBUG TIPO CAMBIO - Último tipo cambio: {tipo_cambio_row.iloc[-1]['TipoCambio']}")
             
             if not tipo_cambio_row.empty:
                 tipo_cambio = tipo_cambio_row.iloc[-1]['TipoCambio']
                 
                 if pd.notna(tipo_cambio) and tipo_cambio != 0:
                     # Ajustar precio dividiendo por tipo de cambio
-                    precio_original = row['Precio']
                     precio_ajustado = row['Precio'] / tipo_cambio
                     operaciones_ajustadas.loc[idx, 'Precio'] = precio_ajustado
                     
                     # También ajustar el monto (Importe) que es precio * cantidad
-                    monto_original = row['Monto']
                     monto_ajustado = row['Monto'] / tipo_cambio
                     operaciones_ajustadas.loc[idx, 'Monto'] = monto_ajustado
-                    
-                    # Debug para operaciones específicas
-                    if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
-                        st.write(f"🔍 DEBUG AJUSTE - Precio: {precio_original} → {precio_ajustado}, Monto: {monto_original} → {monto_ajustado}")
-                else:
-                    if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
-                        st.write(f"🔍 DEBUG ERROR - Tipo de cambio inválido: {tipo_cambio}")
-            else:
-                if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
-                    st.write(f"🔍 DEBUG ERROR - No se encontró tipo de cambio para {fecha_op.strftime('%d/%m/%Y')}")
-        else:
-            if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
-                st.write(f"🔍 DEBUG SKIP - No es pesos o precio es NaN: moneda_tipo={moneda_tipo}, precio={row['Precio']}")
                     
     
     return operaciones_ajustadas
@@ -133,30 +107,8 @@ def load_data(filename='Resumen.xlsx'):
         operaciones_mapped['Cantidad'] = operaciones['Cantidad']
         operaciones_mapped['Precio'] = operaciones['Precio Promedio Ponderado']
         operaciones_mapped['Monto'] = operaciones['Importe']
-        # Debug: Ver qué hay en la columna I (índice 8)
-        import streamlit as st
-        st.write(f"🔍 DEBUG COLUMNA I - Total columnas: {len(operaciones.columns)}")
-        if len(operaciones.columns) > 8:
-            st.write(f"🔍 DEBUG COLUMNA I - Nombre columna 8: '{operaciones.columns[8]}'")
-            # Mostrar algunos valores de ejemplo de la columna I
-            valores_ejemplo = operaciones.iloc[:5, 8].tolist()
-            st.write(f"🔍 DEBUG COLUMNA I - Primeros 5 valores: {valores_ejemplo}")
-        else:
-            st.write(f"🔍 DEBUG COLUMNA I - No hay columna 8, solo {len(operaciones.columns)} columnas")
-        
-        # Usar columna I (índice 8) como especificaste
+        # Usar columna I (índice 8) como especificaste - MAPEAR ANTES DEL FILTRADO
         operaciones_mapped['Moneda'] = operaciones.iloc[:, 8] if len(operaciones.columns) > 8 else None
-        
-        # Debug: Verificar el mapeo de Moneda
-        st.write(f"🔍 DEBUG MAPEO - Primeros 5 valores de Moneda en operaciones_mapped:")
-        st.write(f"🔍 DEBUG MAPEO - {operaciones_mapped['Moneda'].head().tolist()}")
-        
-        # Debug específico para operaciones de junio 2025
-        ops_junio = operaciones_mapped[operaciones_mapped['Fecha'].dt.strftime('%d/%m/%Y').isin(['10/06/2025', '18/06/2025', '25/06/2025'])]
-        if not ops_junio.empty:
-            st.write(f"🔍 DEBUG JUNIO - Operaciones de junio encontradas:")
-            for idx, row in ops_junio.iterrows():
-                st.write(f"🔍 DEBUG JUNIO - Fecha: {row['Fecha'].strftime('%d/%m/%Y')}, Moneda: '{row['Moneda']}', Precio: {row['Precio']}")
         
         # Limpiar datos
         operaciones_mapped['Tipo'] = operaciones_mapped['Tipo'].astype(str).str.strip()
@@ -172,6 +124,7 @@ def load_data(filename='Resumen.xlsx'):
         
         # Limpiar la columna temporal
         operaciones_mapped = operaciones_mapped.drop('Tipo_Lower', axis=1)
+        
         
         # Eliminar filas con valores nulos
         operaciones_mapped = operaciones_mapped.dropna(subset=['Fecha', 'Tipo', 'Activo', 'Monto'])
