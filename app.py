@@ -154,7 +154,17 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df):
         if not dummy_prices.empty:
             available_dummy_prices = dummy_prices[dummy_prices['Fecha'] <= fecha]
             if not available_dummy_prices.empty:
-                return available_dummy_prices.iloc[-1]['Precio']
+                precio_dummy = available_dummy_prices.iloc[-1]['Precio']
+                
+                # Si la moneda es pesos, dividir por el tipo de cambio (columna AC)
+                if moneda_tipo == 'pesos':
+                    # Obtener el tipo de cambio de la columna AC (índice 28)
+                    if len(available_dummy_prices.columns) > 28:
+                        tipo_cambio = available_dummy_prices.iloc[-1].iloc[28]
+                        if pd.notna(tipo_cambio) and tipo_cambio != 0:
+                            precio_dummy = precio_dummy / tipo_cambio
+                
+                return precio_dummy
     
     # Si no se encuentra nada, retornar 0
     return 0
