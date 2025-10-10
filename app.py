@@ -126,10 +126,26 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df):
         # Obtener la moneda más reciente del activo
         moneda = activo_ops['Moneda'].iloc[-1]
         
-        # Determinar activo dummy según moneda
-        if pd.notna(moneda) and str(moneda).strip().lower() == 'pesos':
+        # Usar la misma lógica de detección de moneda que en netting
+        def detectar_moneda(texto):
+            if pd.isna(texto):
+                return 'unknown'
+            texto_lower = str(texto).strip().lower()
+            # Detectar dólares (más variaciones)
+            if any(keyword in texto_lower for keyword in ['dólar', 'dolar', 'usd', 'u$s', 'u$', 'us$', 'billete']):
+                return 'dolar'
+            # Detectar pesos (más variaciones)
+            elif any(keyword in texto_lower for keyword in ['pesos', 'peso', 'contado', 'ars']):
+                return 'pesos'
+            else:
+                return 'unknown'
+        
+        moneda_tipo = detectar_moneda(moneda)
+        
+        # Determinar activo dummy según moneda detectada
+        if moneda_tipo == 'pesos':
             dummy_activo = 'DUMMY Pesos'
-        else:
+        else:  # dolar o unknown
             dummy_activo = 'DUMMY Dolares'
         
         # Buscar precio del activo dummy
