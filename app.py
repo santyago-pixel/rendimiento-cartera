@@ -80,9 +80,20 @@ def ajustar_precios_operaciones(operaciones, tipo_cambio_data):
                 
                 if pd.notna(tipo_cambio) and tipo_cambio != 0:
                     # Ajustar precio dividiendo por tipo de cambio
-                    operaciones_ajustadas.loc[idx, 'Precio'] = row['Precio'] / tipo_cambio
+                    precio_original = row['Precio']
+                    precio_ajustado = row['Precio'] / tipo_cambio
+                    operaciones_ajustadas.loc[idx, 'Precio'] = precio_ajustado
+                    
                     # También ajustar el monto (Importe) que es precio * cantidad
-                    operaciones_ajustadas.loc[idx, 'Monto'] = row['Monto'] / tipo_cambio
+                    monto_original = row['Monto']
+                    monto_ajustado = row['Monto'] / tipo_cambio
+                    operaciones_ajustadas.loc[idx, 'Monto'] = monto_ajustado
+                    
+                    # Debug log
+                    import streamlit as st
+                    st.write(f"🔍 DEBUG OPERACIÓN - Activo: {row['Activo']}, Fecha: {fecha_op.strftime('%d/%m/%Y')}, Moneda: {row['Moneda']}")
+                    st.write(f"🔍 DEBUG OPERACIÓN - Precio original: {precio_original}, Tipo cambio: {tipo_cambio}, Precio ajustado: {precio_ajustado}")
+                    st.write(f"🔍 DEBUG OPERACIÓN - Monto original: {monto_original}, Monto ajustado: {monto_ajustado}")
     
     return operaciones_ajustadas
 
