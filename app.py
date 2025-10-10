@@ -392,11 +392,19 @@ def calculate_current_portfolio(operaciones, precios, fecha_actual, tipo_cambio_
             if 'compra' in tipo_lower:
                 current_nominals += op['Cantidad']
                 total_invested += op['Monto']
+                # Debug para verificar si los montos están ajustados
+                if asset in ['AL30', 'BPOD7'] and op['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
+                    import streamlit as st
+                    st.write(f"🔍 DEBUG COMPOSICIÓN - Activo: {asset}, Fecha: {op['Fecha'].strftime('%d/%m/%Y')}, Moneda: {op['Moneda']}, Monto compra: {op['Monto']}")
             elif 'venta' in tipo_lower:
                 # Las ventas pueden tener nominales negativos en el Excel, ajustar signo
                 cantidad_venta = abs(op['Cantidad']) if op['Cantidad'] < 0 else op['Cantidad']
                 current_nominals -= cantidad_venta
                 total_sales += op['Monto']
+                # Debug para verificar si los montos están ajustados
+                if asset in ['AL30', 'BPOD7'] and op['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
+                    import streamlit as st
+                    st.write(f"🔍 DEBUG COMPOSICIÓN - Activo: {asset}, Fecha: {op['Fecha'].strftime('%d/%m/%Y')}, Moneda: {op['Moneda']}, Monto venta: {op['Monto']}")
             elif any(keyword in tipo_lower for keyword in ['dividendo', 'cupón', 'dividend', 'coupon', 'amortización', 'amortizacion']):
                 total_dividends_coupons += op['Monto']
         
