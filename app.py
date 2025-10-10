@@ -136,7 +136,7 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df):
             if any(keyword in texto_lower for keyword in keywords_dolar):
                 return 'dolar'
             # Detectar pesos (más variaciones)
-            elif any(keyword in texto_lower for keyword in ['pesos', 'peso', 'contado', 'ars']):
+            elif any(keyword in texto_lower for keyword in ['pesos', 'peso', 'ars']):
                 return 'pesos'
             else:
                 return 'unknown'
@@ -204,7 +204,7 @@ def aplicar_netting_cross_currency(operaciones):
                 if any(keyword in texto_lower for keyword in keywords_dolar):
                     return 'dolar'
                 # Detectar pesos (más variaciones)
-                elif any(keyword in texto_lower for keyword in ['pesos', 'peso', 'contado', 'ars']):
+                elif any(keyword in texto_lower for keyword in ['pesos', 'peso', 'ars']):
                     return 'pesos'
                 else:
                     return 'unknown'
