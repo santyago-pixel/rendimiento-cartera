@@ -94,6 +94,12 @@ def load_data(filename='Resumen.xlsx'):
         # Convertir fechas de precios (formato DD/MM/YYYY)
         precios['Fecha'] = pd.to_datetime(precios['Fecha'], dayfirst=True, errors='coerce')
         
+        # Guardar la columna de tipo de cambio (última columna) antes del melt
+        tipo_cambio_col = precios.columns[-1]  # Última columna
+        tipo_cambio_data = precios[['Fecha', tipo_cambio_col]].copy()
+        tipo_cambio_data = tipo_cambio_data.rename(columns={tipo_cambio_col: 'TipoCambio'})
+        tipo_cambio_data = tipo_cambio_data.dropna()
+        
         precios_long = precios.melt(
             id_vars=['Fecha'], 
             var_name='Activo', 
@@ -101,16 +107,16 @@ def load_data(filename='Resumen.xlsx'):
         )
         precios_long = precios_long.dropna()
         
-        return operaciones_mapped, precios_long
+        return operaciones_mapped, precios_long, tipo_cambio_data
         
     except FileNotFoundError:
         st.error(f"No se encontró el archivo '{filename}' en la carpeta del proyecto")
-        return None, None
+        return None, None, None
     except Exception as e:
         st.error(f"Error al cargar el archivo: {str(e)}")
-        return None, None
+        return None, None, None
 
-def obtener_precio_activo(activo, fecha, precios, operaciones_df):
+def obtener_precio_activo(activo, fecha, precios, operaciones_df, tipo_cambio_data):
     """Obtener el precio de un activo en una fecha específica, con fallback a DUMMY según moneda"""
     
     # Buscar precio directo del activo
@@ -156,11 +162,12 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df):
             if not available_dummy_prices.empty:
                 precio_dummy = available_dummy_prices.iloc[-1]['Precio']
                 
-                # Si la moneda es pesos, dividir por el tipo de cambio (columna AC)
+                # Si la moneda es pesos, dividir por el tipo de cambio
                 if moneda_tipo == 'pesos':
-                    # Obtener el tipo de cambio de la columna AC (índice 28)
-                    if len(available_dummy_prices.columns) > 28:
-                        tipo_cambio = available_dummy_prices.iloc[-1].iloc[28]
+                    # Obtener el tipo de cambio para la fecha correspondiente
+                    tipo_cambio_row = tipo_cambio_data[tipo_cambio_data['Fecha'] <= fecha]
+                    if not tipo_cambio_row.empty:
+                        tipo_cambio = tipo_cambio_row.iloc[-1]['TipoCambio']
                         import streamlit as st
                         st.write(f"🔍 DEBUG - Precio antes: {precio_dummy}, Tipo cambio: {tipo_cambio}")
                         if pd.notna(tipo_cambio) and tipo_cambio != 0:
@@ -170,7 +177,7 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df):
                             st.write(f"🔍 DEBUG - Tipo de cambio inválido: {tipo_cambio}")
                     else:
                         import streamlit as st
-                        st.write(f"🔍 DEBUG - No hay columna AC, columnas: {len(available_dummy_prices.columns)}")
+                        st.write(f"🔍 DEBUG - No se encontró tipo de cambio para la fecha {fecha}")
                 
                 return precio_dummy
     
@@ -356,7 +363,7 @@ def calculate_current_portfolio(operaciones, precios, fecha_actual):
         # Solo incluir activos con nominales positivos
         if current_nominals > 0:
             # Obtener precio actual usando la función con fallback a DUMMY
-            current_price = obtener_precio_activo(asset, pd.to_datetime(fecha_actual), precios, operaciones)
+            current_price = obtener_precio_activo(asset, pd.to_datetime(fecha_actual), precios, operaciones, tipo_cambio_data)
             
             if current_price > 0:
                 current_value = current_nominals * current_price
@@ -521,8 +528,8 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
                 total_dividends_coupons_hasta_fin += op['Monto']
         
         # Obtener precios al inicio y fin usando la función con fallback a DUMMY
-        precio_inicio = obtener_precio_activo(asset, pd.to_datetime(fecha_inicio), precios, operaciones)
-        precio_fin = obtener_precio_activo(asset, pd.to_datetime(fecha_fin), precios, operaciones)
+        precio_inicio = obtener_precio_activo(asset, pd.to_datetime(fecha_inicio), precios, operaciones, tipo_cambio_data)
+        precio_fin = obtener_precio_activo(asset, pd.to_datetime(fecha_fin), precios, operaciones, tipo_cambio_data)
         
         # Calcular el costo de todas las compras dentro del período
         valor_inicio = 0
@@ -634,7 +641,7 @@ def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio
     # Agregar valor inicial si hay nominales al inicio del período
     if current_nominals_inicio > 0:
         # Obtener precio al inicio del período usando la función con fallback a DUMMY
-        precio_inicio = obtener_precio_activo(activo, pd.to_datetime(fecha_inicio), precios, operaciones)
+        precio_inicio = obtener_precio_activo(activo, pd.to_datetime(fecha_inicio), precios, operaciones, tipo_cambio_data)
         
         detalle_data.append({
             'Fecha': fecha_inicio,
@@ -750,9 +757,9 @@ def main():
         filename = 'Resumen.xlsx'
     
     # Cargar datos
-    operaciones, precios = load_data(filename)
+    operaciones, precios, tipo_cambio_data = load_data(filename)
     
-    if operaciones is not None and precios is not None:
+    if operaciones is not None and precios is not None and tipo_cambio_data is not None:
         # Calcular composición actual
         portfolio_df = calculate_current_portfolio(operaciones, precios, fecha_actual)
         
