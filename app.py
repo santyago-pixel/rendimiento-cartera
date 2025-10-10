@@ -289,7 +289,7 @@ def aplicar_netting_cross_currency(operaciones):
     
     return ops_netted
 
-def calculate_current_portfolio(operaciones, precios, fecha_actual):
+def calculate_current_portfolio(operaciones, precios, fecha_actual, tipo_cambio_data):
     """Calcular composición actual de la cartera con lógica de reseteo"""
     
     # Convertir fechas (formato DD/MM/YYYY)
@@ -385,7 +385,7 @@ def calculate_current_portfolio(operaciones, precios, fecha_actual):
     
     return pd.DataFrame(portfolio_data)
 
-def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin):
+def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin, tipo_cambio_data):
     """Calcular evolución de la cartera en un rango de fechas"""
     
     # Convertir fechas (formato DD/MM/YYYY)
@@ -574,7 +574,7 @@ def calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
     
     return pd.DataFrame(evolution_data)
 
-def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio, fecha_fin):
+def mostrar_analisis_detallado_activo(operaciones, precios, activo, fecha_inicio, fecha_fin, tipo_cambio_data):
     """Mostrar análisis detallado de un activo específico"""
     
     # Convertir fechas (formato DD/MM/YYYY)
@@ -761,7 +761,7 @@ def main():
     
     if operaciones is not None and precios is not None and tipo_cambio_data is not None:
         # Calcular composición actual
-        portfolio_df = calculate_current_portfolio(operaciones, precios, fecha_actual)
+        portfolio_df = calculate_current_portfolio(operaciones, precios, fecha_actual, tipo_cambio_data)
         
         if not portfolio_df.empty:
             st.header("Composición Actual de la Cartera")
@@ -835,7 +835,7 @@ def main():
         st.markdown(f"*Análisis del {fecha_inicio.strftime('%d/%m/%Y')} al {fecha_fin.strftime('%d/%m/%Y')}*")
         
         # Calcular evolución de la cartera
-        evolution_df = calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin)
+        evolution_df = calculate_portfolio_evolution(operaciones, precios, fecha_inicio, fecha_fin, tipo_cambio_data)
         
         if not evolution_df.empty:
             # Mostrar métricas resumidas de evolución
@@ -917,7 +917,7 @@ def main():
             
             if activo_seleccionado and activo_seleccionado != "Seleccionar":
                 # Mostrar análisis detallado del activo seleccionado
-                mostrar_analisis_detallado_activo(operaciones, precios, activo_seleccionado, fecha_inicio, fecha_fin)
+                mostrar_analisis_detallado_activo(operaciones, precios, activo_seleccionado, fecha_inicio, fecha_fin, tipo_cambio_data)
     else:
         st.error("Error al cargar los datos. Verifica que el archivo 'operaciones.xlsx' esté en la carpeta del proyecto.")
 
