@@ -89,11 +89,6 @@ def ajustar_precios_operaciones(operaciones, tipo_cambio_data):
                     monto_ajustado = row['Monto'] / tipo_cambio
                     operaciones_ajustadas.loc[idx, 'Monto'] = monto_ajustado
                     
-                    # Debug log
-                    import streamlit as st
-                    st.write(f"🔍 DEBUG OPERACIÓN - Activo: {row['Activo']}, Fecha: {fecha_op.strftime('%d/%m/%Y')}, Moneda: {row['Moneda']}")
-                    st.write(f"🔍 DEBUG OPERACIÓN - Precio original: {precio_original}, Tipo cambio: {tipo_cambio}, Precio ajustado: {precio_ajustado}")
-                    st.write(f"🔍 DEBUG OPERACIÓN - Monto original: {monto_original}, Monto ajustado: {monto_ajustado}")
     
     return operaciones_ajustadas
 
@@ -222,16 +217,8 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df, tipo_cambio_da
                     tipo_cambio_row = tipo_cambio_data[tipo_cambio_data['Fecha'] <= fecha]
                     if not tipo_cambio_row.empty:
                         tipo_cambio = tipo_cambio_row.iloc[-1]['TipoCambio']
-                        import streamlit as st
-                        st.write(f"🔍 DEBUG - Precio antes: {precio_dummy}, Tipo cambio: {tipo_cambio}")
                         if pd.notna(tipo_cambio) and tipo_cambio != 0:
                             precio_dummy = precio_dummy / tipo_cambio
-                            st.write(f"🔍 DEBUG - Precio después: {precio_dummy}")
-                        else:
-                            st.write(f"🔍 DEBUG - Tipo de cambio inválido: {tipo_cambio}")
-                    else:
-                        import streamlit as st
-                        st.write(f"🔍 DEBUG - No se encontró tipo de cambio para la fecha {fecha}")
                 
                 return precio_dummy
     
