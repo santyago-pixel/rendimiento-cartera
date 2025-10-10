@@ -133,7 +133,18 @@ def load_data(filename='Resumen.xlsx'):
         operaciones_mapped['Cantidad'] = operaciones['Cantidad']
         operaciones_mapped['Precio'] = operaciones['Precio Promedio Ponderado']
         operaciones_mapped['Monto'] = operaciones['Importe']
-        # Columna I (índice 8): Tipo de moneda (Pesos o Dolares)
+        # Debug: Ver qué hay en la columna I (índice 8)
+        import streamlit as st
+        st.write(f"🔍 DEBUG COLUMNA I - Total columnas: {len(operaciones.columns)}")
+        if len(operaciones.columns) > 8:
+            st.write(f"🔍 DEBUG COLUMNA I - Nombre columna 8: '{operaciones.columns[8]}'")
+            # Mostrar algunos valores de ejemplo de la columna I
+            valores_ejemplo = operaciones.iloc[:5, 8].tolist()
+            st.write(f"🔍 DEBUG COLUMNA I - Primeros 5 valores: {valores_ejemplo}")
+        else:
+            st.write(f"🔍 DEBUG COLUMNA I - No hay columna 8, solo {len(operaciones.columns)} columnas")
+        
+        # Usar columna I (índice 8) como especificaste
         operaciones_mapped['Moneda'] = operaciones.iloc[:, 8] if len(operaciones.columns) > 8 else None
         
         # Limpiar datos
