@@ -70,10 +70,21 @@ def ajustar_precios_operaciones(operaciones, tipo_cambio_data):
     for idx, row in operaciones_ajustadas.iterrows():
         moneda_tipo = detectar_moneda(row['Moneda'])
         
+        # Debug para operaciones específicas
+        if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
+            import streamlit as st
+            st.write(f"🔍 DEBUG FILTRO - Fecha: {row['Fecha'].strftime('%d/%m/%Y')}, Moneda: {row['Moneda']}, Tipo detectado: {moneda_tipo}, Precio: {row['Precio']}")
+        
         if moneda_tipo == 'pesos' and pd.notna(row['Precio']):
             # Obtener el tipo de cambio para la fecha de la operación
             fecha_op = row['Fecha']
             tipo_cambio_row = tipo_cambio_data[tipo_cambio_data['Fecha'] <= fecha_op]
+            
+            # Debug para operaciones específicas
+            if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
+                st.write(f"🔍 DEBUG TIPO CAMBIO - Fecha: {fecha_op.strftime('%d/%m/%Y')}, Filas encontradas: {len(tipo_cambio_row)}")
+                if not tipo_cambio_row.empty:
+                    st.write(f"🔍 DEBUG TIPO CAMBIO - Último tipo cambio: {tipo_cambio_row.iloc[-1]['TipoCambio']}")
             
             if not tipo_cambio_row.empty:
                 tipo_cambio = tipo_cambio_row.iloc[-1]['TipoCambio']
@@ -88,6 +99,19 @@ def ajustar_precios_operaciones(operaciones, tipo_cambio_data):
                     monto_original = row['Monto']
                     monto_ajustado = row['Monto'] / tipo_cambio
                     operaciones_ajustadas.loc[idx, 'Monto'] = monto_ajustado
+                    
+                    # Debug para operaciones específicas
+                    if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
+                        st.write(f"🔍 DEBUG AJUSTE - Precio: {precio_original} → {precio_ajustado}, Monto: {monto_original} → {monto_ajustado}")
+                else:
+                    if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
+                        st.write(f"🔍 DEBUG ERROR - Tipo de cambio inválido: {tipo_cambio}")
+            else:
+                if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
+                    st.write(f"🔍 DEBUG ERROR - No se encontró tipo de cambio para {fecha_op.strftime('%d/%m/%Y')}")
+        else:
+            if row['Fecha'].strftime('%d/%m/%Y') in ['10/06/2025', '18/06/2025', '25/06/2025']:
+                st.write(f"🔍 DEBUG SKIP - No es pesos o precio es NaN: moneda_tipo={moneda_tipo}, precio={row['Precio']}")
                     
     
     return operaciones_ajustadas
@@ -407,22 +431,22 @@ def calculate_current_portfolio(operaciones, precios, fecha_actual, tipo_cambio_
             current_price = obtener_precio_activo(asset, pd.to_datetime(fecha_actual), precios, operaciones, tipo_cambio_data)
             
             if current_price > 0:
-                current_value = current_nominals * current_price
-                
-                # Ganancia total = (Valor Actual - Inversión) + Dividendos/Cupones + Ventas
-                # Las ventas son capital recibido, por lo tanto se suman
-                total_gain = (current_value - total_invested) + total_dividends_coupons + total_sales
-                
-                portfolio_data.append({
-                    'Activo': asset,
-                    'Nominales': current_nominals,
-                    'Precio Actual': current_price,
-                    'Valor Actual': current_value,
-                    'Invertido': total_invested,
-                    'Ventas': total_sales,
-                    'Div - Cupones': total_dividends_coupons,
-                    'Ganancia Total': total_gain
-                })
+                    current_value = current_nominals * current_price
+                    
+                    # Ganancia total = (Valor Actual - Inversión) + Dividendos/Cupones + Ventas
+                    # Las ventas son capital recibido, por lo tanto se suman
+                    total_gain = (current_value - total_invested) + total_dividends_coupons + total_sales
+                    
+                    portfolio_data.append({
+                        'Activo': asset,
+                        'Nominales': current_nominals,
+                        'Precio Actual': current_price,
+                        'Valor Actual': current_value,
+                        'Invertido': total_invested,
+                        'Ventas': total_sales,
+                        'Div - Cupones': total_dividends_coupons,
+                        'Ganancia Total': total_gain
+                    })
     
     return pd.DataFrame(portfolio_data)
 
