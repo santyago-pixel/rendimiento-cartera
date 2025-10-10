@@ -85,7 +85,7 @@ def load_data(filename='Resumen.xlsx'):
         operaciones_mapped = operaciones_mapped.dropna(subset=['Fecha', 'Tipo', 'Activo', 'Monto'])
         
         # Cargar precios (mantiene la misma estructura)
-        precios = pd.read_excel(filename, sheet_name='Precios')
+        precios = pd.read_excel(filename, sheet_name='Precios')  # headers en fila 1 (default)
         
         # Convertir a formato largo
         fecha_col = precios.columns[0]
@@ -161,8 +161,16 @@ def obtener_precio_activo(activo, fecha, precios, operaciones_df):
                     # Obtener el tipo de cambio de la columna AC (índice 28)
                     if len(available_dummy_prices.columns) > 28:
                         tipo_cambio = available_dummy_prices.iloc[-1].iloc[28]
+                        import streamlit as st
+                        st.write(f"🔍 DEBUG - Precio antes: {precio_dummy}, Tipo cambio: {tipo_cambio}")
                         if pd.notna(tipo_cambio) and tipo_cambio != 0:
                             precio_dummy = precio_dummy / tipo_cambio
+                            st.write(f"🔍 DEBUG - Precio después: {precio_dummy}")
+                        else:
+                            st.write(f"🔍 DEBUG - Tipo de cambio inválido: {tipo_cambio}")
+                    else:
+                        import streamlit as st
+                        st.write(f"🔍 DEBUG - No hay columna AC, columnas: {len(available_dummy_prices.columns)}")
                 
                 return precio_dummy
     
