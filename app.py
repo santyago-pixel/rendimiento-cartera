@@ -46,6 +46,46 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def ajustar_precios_operaciones(operaciones, tipo_cambio_data):
+    """Ajustar precios de operaciones en pesos dividiendo por tipo de cambio"""
+    
+    def detectar_moneda(texto):
+        if pd.isna(texto):
+            return 'unknown'
+        texto_lower = str(texto).strip().lower()
+        # Detectar dólares (más variaciones - cualquier combinación de mayúsculas/minúsculas)
+        keywords_dolar = ['dólar', 'dolar', 'usd', 'u$s', 'u$', 'us$', 'billete']
+        if any(keyword in texto_lower for keyword in keywords_dolar):
+            return 'dolar'
+        # Detectar pesos (más variaciones)
+        elif any(keyword in texto_lower for keyword in ['pesos', 'peso', 'ars']):
+            return 'pesos'
+        else:
+            return 'unknown'
+    
+    # Crear una copia para no modificar los datos originales
+    operaciones_ajustadas = operaciones.copy()
+    
+    # Aplicar ajuste a operaciones en pesos
+    for idx, row in operaciones_ajustadas.iterrows():
+        moneda_tipo = detectar_moneda(row['Moneda'])
+        
+        if moneda_tipo == 'pesos' and pd.notna(row['Precio']):
+            # Obtener el tipo de cambio para la fecha de la operación
+            fecha_op = row['Fecha']
+            tipo_cambio_row = tipo_cambio_data[tipo_cambio_data['Fecha'] <= fecha_op]
+            
+            if not tipo_cambio_row.empty:
+                tipo_cambio = tipo_cambio_row.iloc[-1]['TipoCambio']
+                
+                if pd.notna(tipo_cambio) and tipo_cambio != 0:
+                    # Ajustar precio dividiendo por tipo de cambio
+                    operaciones_ajustadas.loc[idx, 'Precio'] = row['Precio'] / tipo_cambio
+                    # También ajustar el monto (Importe) que es precio * cantidad
+                    operaciones_ajustadas.loc[idx, 'Monto'] = row['Monto'] / tipo_cambio
+    
+    return operaciones_ajustadas
+
 def load_data(filename='Resumen.xlsx'):
     """Cargar datos automáticamente desde Resumen.xlsx o archivo especificado"""
     try:
@@ -107,7 +147,10 @@ def load_data(filename='Resumen.xlsx'):
         )
         precios_long = precios_long.dropna()
         
-        return operaciones_mapped, precios_long, tipo_cambio_data
+        # Ajustar precios de operaciones en pesos
+        operaciones_ajustadas = ajustar_precios_operaciones(operaciones_mapped, tipo_cambio_data)
+        
+        return operaciones_ajustadas, precios_long, tipo_cambio_data
         
     except FileNotFoundError:
         st.error(f"No se encontró el archivo '{filename}' en la carpeta del proyecto")
